@@ -12,7 +12,7 @@ info:
   The solution will automatically synchronize with Hotel Beds downloading all
   the necessary changes in availability, it uses rules-based files designed to
   transfer data with minimal network traffic.
-  termsOfService: 'https://developer-beta.hotelbeds.com/api-terms-use'
+
   contact:
     name: Apitude Support
     url: 'https://developer-beta.hotelbeds.com'
