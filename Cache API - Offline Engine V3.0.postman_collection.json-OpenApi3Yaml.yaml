@@ -1,8 +1,25 @@
 openapi: 3.0.0
 info:
-  title: Cache API - Offline Engine V3.0
-  description: "Offline Engine provides a way to run Cache API availability in an isolated cloud or on-premise servers, giving an API with calculated prices without limits.\n\nThis application is intended to run on the client-side systems giving full access to Cache API final prices and availability. \n\n![diagram](https://gitlab.com/pablo.iturralde.garrote/offline-engine/raw/master/OfflineDiagrama.PNG?inline=true \"xx\")\n\n\n\n\n# Offline Engine usage flow\n\n> The Offline Engine works with a hybrid push-pull model. A work-set defines a scan plan, for example: for a given hotel the number of occupancies and the length of stay. With the definition of a work-set, a new stream of changes is exposed pushing the changes defined in that work-set, this messages are called **Change Key** and the stream **hotels/change/stream**. Therefore the client can consume the different stream changes with priority. \n\nWhen receiving a change key through the change stream, you can query the end-point **hotel/change/details** to query the detailed information of the change.\n\n# Offline Engine setup \nTo install the last version run the following command. \n\n```\napt-get install offline-engine\n```\n\n#Configuration File \nThe Offline Engine package includes a configuration file located in /etc/offline-engine.conf. These settings take effect upon startup. That is, if you change the configuration file while the Offline Engine is running you must restart the service. \n\n```\nhbg:\n   user: test\n   password: test\n    debug: true\nstorage:\n	storage:\n		url:http://localhost:6379\n   	kafka: \n   		configuration:xx\nsystemLog:\n   destination: file\n   path: \"/var/log/offline-engine/offline-engine.log\"\n   logAppend: true\n```\n\n### hgb.user\nType: String\nDefault: test\n\nThe username of the account. \n\n### storage.redis \nType: String \nDefault: null\n\n### storage.Kafka\nType: boolean\nDefault: true\n\nIf you run the Offline Engine in debug mode it is not necessary to configure a Redis database. It will work with an in-memory database. This feature is only used in development mode and not for a production environment. \n\n# Usage\nStart the service. \n```\noffline-engine start  \n```\n\nStop the service \n```\noffline-engine stop\n```\n\n# End-points"
-  contact: {}
+  title:  Offline Engine V3.0
+  description: >-
+  #Offline Engine API
+  
+  The Offline Engine provides a way to query the HBG availability directly 
+  in the client's data centers, without any limitation of quotas or traffic. 
+  It is designed for Multimarket search.
+
+  A Dockerized solution is installed in the customer's data center. 
+  The solution will automatically synchronize with Hotel Beds downloading all
+  the necessary changes in availability, it uses rules-based files designed to
+  transfer data with minimal network traffic.
+  termsOfService: 'https://developer-beta.hotelbeds.com/api-terms-use'
+  contact:
+    name: Apitude Support
+    url: 'https://developer-beta.hotelbeds.com'
+    email: developer-beta@hotelbeds.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
   version: '1.0'
 servers:
 - url: https://cd41e6aa-6d17-4546-b024-fddc0798db0b.mock.pstmn.io/hotels
@@ -11,7 +28,7 @@ paths:
   /changes/stream:
     get:
       tags:
-      - Misc
+      - Changes
       summary: hotels/change/stream
       description: "This endpoint represents a Kafka topic for the specific work-set defined in the workset endpoint. The messages of the topic contain the changes at the hotel level, having the occupancy and the length of stay as secondary attributes. This change stream works together with the hotels/changes endpoint to get the specific changes.\n\nA work-set defines a Kafka topic, therefore every time a work-set is defined a new topic is created. This will help the clients to prioritize a \n\n\n\n**Reply Arguments**\n\n| Variable      |  Description |\n| ------------- |: -----:|\n| changedDate   | true - EPOCH       | Date to retrieve the changes |\n| hotel         | false - Array      | IDs |\n| packaging     | false - Boolean    | true/false |\n| adults        | false - Int        | # adults |\n| child Age     | false - Array[int] | childs ages |\n| lenghtOfStay  | false - int        | lenght of the stay |"
       operationId: hotels/change/stream
@@ -120,7 +137,7 @@ paths:
   /changes:
     post:
       tags:
-      - Misc
+      - Availability
       summary: hotels/change/details
       description: "This endpoint accepts filters, the filters are passed in the body of the post request. This endpoint works together with the hotel/changes/stream, \n\n**Request Arguments**\n\n| Variable      | Required - Type | Description |\n| ------------- |:-------------:  | -----:|\n| WorksetId      | true - String   |the workset were the change Key came from |\n| Hotel      | true - String   | it have the hotel ID to retrieve the changes details|\n| RoomCodes      | true - String   | At least one Room Code have to be indicated|\n| packaging      | false - Boolean        |   true/false |\n| adults | false - Int       |    Optional field with hte number of adults |\n| child Age | false - Array[int] |    Optional field with the  ages of the childs|"
       operationId: hotels/change/details
