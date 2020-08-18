@@ -2,17 +2,17 @@ openapi: 3.0.0
 info:
   title:  Offline Engine V3.0
   description: >-
-  #Offline Engine API
-  
-  The Offline Engine provides a way to query the HBG availability directly 
-  in the client's data centers, without any limitation of quotas or traffic. 
-  It is designed for Multimarket search.
+    #Offline Engine API
 
-  A Dockerized solution is installed in the customer's data center. 
-  The solution will automatically synchronize with Hotel Beds downloading all
-  the necessary changes in availability, it uses rules-based files designed to
-  transfer data with minimal network traffic.
+    The Offline Engine provides a way to query the HBG availability directly 
+    in the client's data centers, without any limitation of quotas or traffic. 
+    It is designed for Multimarket search.
 
+    A Dockerized solution is installed in the customer's data center. 
+    The solution will automatically synchronize with Hotel Beds downloading all
+    the necessary changes in availability, it uses rules-based files designed to
+    transfer data with minimal network traffic.
+  termsOfService: 'https://developer-beta.hotelbeds.com/api-terms-use'
   contact:
     name: Apitude Support
     url: 'https://developer-beta.hotelbeds.com'
