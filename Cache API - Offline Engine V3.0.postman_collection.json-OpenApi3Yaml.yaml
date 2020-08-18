@@ -1,0 +1,757 @@
+openapi: 3.0.0
+info:
+  title: Cache API - Offline Engine V3.0
+  description: "Offline Engine provides a way to run Cache API availability in an isolated cloud or on-premise servers, giving an API with calculated prices without limits.\n\nThis application is intended to run on the client-side systems giving full access to Cache API final prices and availability. \n\n![diagram](https://gitlab.com/pablo.iturralde.garrote/offline-engine/raw/master/OfflineDiagrama.PNG?inline=true \"xx\")\n\n\n\n\n# Offline Engine usage flow\n\n> The Offline Engine works with a hybrid push-pull model. A work-set defines a scan plan, for example: for a given hotel the number of occupancies and the length of stay. With the definition of a work-set, a new stream of changes is exposed pushing the changes defined in that work-set, this messages are called **Change Key** and the stream **hotels/change/stream**. Therefore the client can consume the different stream changes with priority. \n\nWhen receiving a change key through the change stream, you can query the end-point **hotel/change/details** to query the detailed information of the change.\n\n# Offline Engine setup \nTo install the last version run the following command. \n\n```\napt-get install offline-engine\n```\n\n#Configuration File \nThe Offline Engine package includes a configuration file located in /etc/offline-engine.conf. These settings take effect upon startup. That is, if you change the configuration file while the Offline Engine is running you must restart the service. \n\n```\nhbg:\n   user: test\n   password: test\n    debug: true\nstorage:\n	storage:\n		url:http://localhost:6379\n   	kafka: \n   		configuration:xx\nsystemLog:\n   destination: file\n   path: \"/var/log/offline-engine/offline-engine.log\"\n   logAppend: true\n```\n\n### hgb.user\nType: String\nDefault: test\n\nThe username of the account. \n\n### storage.redis \nType: String \nDefault: null\n\n### storage.Kafka\nType: boolean\nDefault: true\n\nIf you run the Offline Engine in debug mode it is not necessary to configure a Redis database. It will work with an in-memory database. This feature is only used in development mode and not for a production environment. \n\n# Usage\nStart the service. \n```\noffline-engine start  \n```\n\nStop the service \n```\noffline-engine stop\n```\n\n# End-points"
+  contact: {}
+  version: '1.0'
+servers:
+- url: https://cd41e6aa-6d17-4546-b024-fddc0798db0b.mock.pstmn.io/hotels
+  variables: {}
+paths:
+  /changes/stream:
+    get:
+      tags:
+      - Misc
+      summary: hotels/change/stream
+      description: "This endpoint represents a Kafka topic for the specific work-set defined in the workset endpoint. The messages of the topic contain the changes at the hotel level, having the occupancy and the length of stay as secondary attributes. This change stream works together with the hotels/changes endpoint to get the specific changes.\n\nA work-set defines a Kafka topic, therefore every time a work-set is defined a new topic is created. This will help the clients to prioritize a \n\n\n\n**Reply Arguments**\n\n| Variable      |  Description |\n| ------------- |: -----:|\n| changedDate   | true - EPOCH       | Date to retrieve the changes |\n| hotel         | false - Array      | IDs |\n| packaging     | false - Boolean    | true/false |\n| adults        | false - Int        | # adults |\n| child Age     | false - Array[int] | childs ages |\n| lenghtOfStay  | false - int        | lenght of the stay |"
+      operationId: hotels/change/stream
+      parameters:
+      - name: Accept
+        in: header
+        description: ''
+        required: true
+        style: simple
+        schema:
+          type: string
+          example: application/json
+      - name: Content-Type
+        in: header
+        description: ''
+        required: true
+        style: simple
+        schema:
+          type: string
+          example: application/json
+      responses:
+        200:
+          description: ''
+          headers:
+            Access-Control-Allow-Origin:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '*'
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Mon, 18 Nov 2019 14:40:58 GMT
+            ETag:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: W/"c8-mapFHWFuOlIJT+nxvehvAHghO7w"
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Accept-Encoding
+            x-srv-span:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: v=1;s=4893058b97fb0fd2
+            x-srv-trace:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: v=1;t=b4367fb6e6837744
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: 162
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+          content:
+            text/html; charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/hotels~1change~1stream'
+              example:
+                worksetId: 1234_wid
+                changedDate: 2019-10-25 16:58:40
+                hotel: 77
+                roomCodes:
+                - DBT.ST
+                - SUI.KG
+                packaging: true
+                sourceMarket: DE
+                directPayment: true
+                occupancy:
+                  adults: 2
+                  childAgea:
+                  - 9
+                  - 12
+                lengthsOfStay: 11
+      deprecated: false
+  /changes:
+    post:
+      tags:
+      - Misc
+      summary: hotels/change/details
+      description: "This endpoint accepts filters, the filters are passed in the body of the post request. This endpoint works together with the hotel/changes/stream, \n\n**Request Arguments**\n\n| Variable      | Required - Type | Description |\n| ------------- |:-------------:  | -----:|\n| WorksetId      | true - String   |the workset were the change Key came from |\n| Hotel      | true - String   | it have the hotel ID to retrieve the changes details|\n| RoomCodes      | true - String   | At least one Room Code have to be indicated|\n| packaging      | false - Boolean        |   true/false |\n| adults | false - Int       |    Optional field with hte number of adults |\n| child Age | false - Array[int] |    Optional field with the  ages of the childs|"
+      operationId: hotels/change/details
+      parameters:
+      - name: Accept-Encoding
+        in: header
+        description: ''
+        required: true
+        style: simple
+        schema:
+          type: string
+          example: application/json
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/hotels~1change~1detailsrequest'
+            example:
+              worksetId: 1234_wid
+              changedDate: 2019-10-25 16:58:40
+              hotel: 77
+              roomCode: DBT.ST
+              packaging: true
+              sourceMarket: DE
+              directPayment: true
+              occupancy:
+                adults: 2
+                childAgea:
+                - 9
+                - 12
+              lengthsOfStay: 11
+        required: true
+      responses:
+        200:
+          description: ''
+          headers:
+            Access-Control-Allow-Origin:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '*'
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Mon, 18 Nov 2019 14:42:02 GMT
+            ETag:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: W/"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Accept-Encoding
+            x-srv-span:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: v=1;s=361e4f53a26d17e6
+            x-srv-trace:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: v=1;t=dc1549e81415fde6
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: 310
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+          content:
+            text/html; charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/hotels~1change~1details'
+              example:
+                since: 2020-04-27 09:06:10
+                sourceMarket: DE
+                includesPackagingRates: false
+                includesPaymentAtHotelRates: false
+                hotel: 694
+                checkIn: 2020-05-09
+                lengthOfStay: 2
+                occupancy:
+                  adultAges:
+                  - 30
+                  - 30
+                  childAges:
+                  - 8
+                  - 10
+                rateAvailability:
+                - rate:
+                    name: NRF-TODOS AD
+                    code: APT-ST-5
+                    board: BB
+                    packaging: false
+                    payableAtHotel: false
+                    Promotions:
+                    - code: 073
+                      description: Non-refundable rate. No amendments permitted
+                    - code: 042
+                      description: Special offer - Special offer
+                  cancellations:
+                  - cancellLeadTimes: 2020-05-09 16:00
+                    policy:
+                      Type: PerNight / PerWholeNight / FirstNight
+                      FixAmount: 123
+                      PercentageAmount: 75%
+                  finalPrice:
+                  - leadTime: 2020-05-06 16:00
+                    net: 546.06
+                    sellingRate: 280.00
+                    hotelMandatory: true
+                  - leadTime: 2020-05-06 16:00
+                    net: 546.06
+                    sellingRate: 280.00
+                    hotelMandatory: true
+                  taxBreakDown:
+                    taxes:
+                    - included: false
+                      amount: 6.60
+                      currency: EUR
+                      type: TAX
+                      clientAmount: 6.60
+                      clientCurrency: EUR
+                    - included: true
+                      percent: 10.00
+                      amount: 15.29
+                      currency: EUR
+                      type: TAX
+                    allIncluded: false
+      deprecated: false
+components:
+  schemas:
+    hotels/change/stream:
+      title: hotels/change/stream
+      required:
+      - worksetId
+      - changedDate
+      - hotel
+      - roomCodes
+      - packaging
+      - sourceMarket
+      - directPayment
+      - occupancy
+      - lengthsOfStay
+      type: object
+      properties:
+        worksetId:
+          type: string
+        changedDate:
+          type: string
+        hotel:
+          type: integer
+          format: int32
+        roomCodes:
+          type: array
+          items:
+            type: string
+          description: ''
+        packaging:
+          type: boolean
+        sourceMarket:
+          type: string
+        directPayment:
+          type: boolean
+        occupancy:
+          $ref: '#/components/schemas/Occupancy'
+        lengthsOfStay:
+          type: integer
+          format: int32
+      example:
+        worksetId: 1234_wid
+        changedDate: 2019-10-25 16:58:40
+        hotel: 77
+        roomCodes:
+        - DBT.ST
+        - SUI.KG
+        packaging: true
+        sourceMarket: DE
+        directPayment: true
+        occupancy:
+          adults: 2
+          childAgea:
+          - 9
+          - 12
+        lengthsOfStay: 11
+    Occupancy:
+      title: Occupancy
+      required:
+      - adults
+      - childAgea
+      type: object
+      properties:
+        adults:
+          type: integer
+          format: int32
+        childAgea:
+          type: array
+          items:
+            type: integer
+            format: int32
+          description: ''
+      example:
+        adults: 2
+        childAgea:
+        - 9
+        - 12
+    hotels/change/detailsrequest:
+      title: hotels/change/detailsrequest
+      required:
+      - worksetId
+      - changedDate
+      - hotel
+      - roomCode
+      - packaging
+      - sourceMarket
+      - directPayment
+      - occupancy
+      - lengthsOfStay
+      type: object
+      properties:
+        worksetId:
+          type: string
+        changedDate:
+          type: string
+        hotel:
+          type: integer
+          format: int32
+        roomCode:
+          type: string
+        packaging:
+          type: boolean
+        sourceMarket:
+          type: string
+        directPayment:
+          type: boolean
+        occupancy:
+          $ref: '#/components/schemas/Occupancy'
+        lengthsOfStay:
+          type: integer
+          format: int32
+      example:
+        worksetId: 1234_wid
+        changedDate: 2019-10-25 16:58:40
+        hotel: 77
+        roomCode: DBT.ST
+        packaging: true
+        sourceMarket: DE
+        directPayment: true
+        occupancy:
+          adults: 2
+          childAgea:
+          - 9
+          - 12
+        lengthsOfStay: 11
+    hotels/change/details:
+      title: hotels/change/details
+      required:
+      - since
+      - sourceMarket
+      - includesPackagingRates
+      - includesPaymentAtHotelRates
+      - hotel
+      - checkIn
+      - lengthOfStay
+      - occupancy
+      - rateAvailability
+      type: object
+      properties:
+        since:
+          type: string
+        sourceMarket:
+          type: string
+        includesPackagingRates:
+          type: boolean
+        includesPaymentAtHotelRates:
+          type: boolean
+        hotel:
+          type: integer
+          format: int32
+        checkIn:
+          type: string
+        lengthOfStay:
+          type: integer
+          format: int32
+        occupancy:
+          $ref: '#/components/schemas/Occupancy2'
+        rateAvailability:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateAvailability'
+          description: ''
+      example:
+        since: 2020-04-27 09:06:10
+        sourceMarket: DE
+        includesPackagingRates: false
+        includesPaymentAtHotelRates: false
+        hotel: 694
+        checkIn: 2020-05-09
+        lengthOfStay: 2
+        occupancy:
+          adultAges:
+          - 30
+          - 30
+          childAges:
+          - 8
+          - 10
+        rateAvailability:
+        - rate:
+            name: NRF-TODOS AD
+            code: APT-ST-5
+            board: BB
+            packaging: false
+            payableAtHotel: false
+            Promotions:
+            - code: 073
+              description: Non-refundable rate. No amendments permitted
+            - code: 042
+              description: Special offer - Special offer
+          cancellations:
+          - cancellLeadTimes: 2020-05-09 16:00
+            policy:
+              Type: PerNight / PerWholeNight / FirstNight
+              FixAmount: 123
+              PercentageAmount: 75%
+          finalPrice:
+          - leadTime: 2020-05-06 16:00
+            net: 546.06
+            sellingRate: 280.00
+            hotelMandatory: true
+          - leadTime: 2020-05-06 16:00
+            net: 546.06
+            sellingRate: 280.00
+            hotelMandatory: true
+          taxBreakDown:
+            taxes:
+            - included: false
+              amount: 6.60
+              currency: EUR
+              type: TAX
+              clientAmount: 6.60
+              clientCurrency: EUR
+            - included: true
+              percent: 10.00
+              amount: 15.29
+              currency: EUR
+              type: TAX
+            allIncluded: false
+    Occupancy2:
+      title: Occupancy2
+      required:
+      - adultAges
+      - childAges
+      type: object
+      properties:
+        adultAges:
+          type: array
+          items:
+            type: integer
+            format: int32
+          description: ''
+        childAges:
+          type: array
+          items:
+            type: integer
+            format: int32
+          description: ''
+      example:
+        adultAges:
+        - 30
+        - 30
+        childAges:
+        - 8
+        - 10
+    RateAvailability:
+      title: RateAvailability
+      required:
+      - rate
+      - cancellations
+      - finalPrice
+      - taxBreakDown
+      type: object
+      properties:
+        rate:
+          $ref: '#/components/schemas/Rate'
+        cancellations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cancellation'
+          description: ''
+        finalPrice:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinalPrice'
+          description: ''
+        taxBreakDown:
+          $ref: '#/components/schemas/TaxBreakDown'
+      example:
+        rate:
+          name: NRF-TODOS AD
+          code: APT-ST-5
+          board: BB
+          packaging: false
+          payableAtHotel: false
+          Promotions:
+          - code: 073
+            description: Non-refundable rate. No amendments permitted
+          - code: 042
+            description: Special offer - Special offer
+        cancellations:
+        - cancellLeadTimes: 2020-05-09 16:00
+          policy:
+            Type: PerNight / PerWholeNight / FirstNight
+            FixAmount: 123
+            PercentageAmount: 75%
+        finalPrice:
+        - leadTime: 2020-05-06 16:00
+          net: 546.06
+          sellingRate: 280.00
+          hotelMandatory: true
+        - leadTime: 2020-05-06 16:00
+          net: 546.06
+          sellingRate: 280.00
+          hotelMandatory: true
+        taxBreakDown:
+          taxes:
+          - included: false
+            amount: 6.60
+            currency: EUR
+            type: TAX
+            clientAmount: 6.60
+            clientCurrency: EUR
+          - included: true
+            percent: 10.00
+            amount: 15.29
+            currency: EUR
+            type: TAX
+          allIncluded: false
+    Rate:
+      title: Rate
+      required:
+      - name
+      - code
+      - board
+      - packaging
+      - payableAtHotel
+      - Promotions
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        board:
+          type: string
+        packaging:
+          type: boolean
+        payableAtHotel:
+          type: boolean
+        Promotions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Promotion'
+          description: ''
+      example:
+        name: NRF-TODOS AD
+        code: APT-ST-5
+        board: BB
+        packaging: false
+        payableAtHotel: false
+        Promotions:
+        - code: 073
+          description: Non-refundable rate. No amendments permitted
+        - code: 042
+          description: Special offer - Special offer
+    Promotion:
+      title: Promotion
+      required:
+      - code
+      - description
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+      example:
+        code: 073
+        description: Non-refundable rate. No amendments permitted
+    Cancellation:
+      title: Cancellation
+      required:
+      - cancellLeadTimes
+      - policy
+      type: object
+      properties:
+        cancellLeadTimes:
+          type: string
+        policy:
+          $ref: '#/components/schemas/Policy'
+      example:
+        cancellLeadTimes: 2020-05-09 16:00
+        policy:
+          Type: PerNight / PerWholeNight / FirstNight
+          FixAmount: 123
+          PercentageAmount: 75%
+    Policy:
+      title: Policy
+      required:
+      - Type
+      - FixAmount
+      - PercentageAmount
+      type: object
+      properties:
+        Type:
+          type: string
+        FixAmount:
+          type: string
+        PercentageAmount:
+          type: string
+      example:
+        Type: PerNight / PerWholeNight / FirstNight
+        FixAmount: 123
+        PercentageAmount: 75%
+    FinalPrice:
+      title: FinalPrice
+      required:
+      - leadTime
+      - net
+      - sellingRate
+      - hotelMandatory
+      type: object
+      properties:
+        leadTime:
+          type: string
+        net:
+          type: string
+        sellingRate:
+          type: string
+        hotelMandatory:
+          type: boolean
+      example:
+        leadTime: 2020-05-06 16:00
+        net: 546.06
+        sellingRate: 280.00
+        hotelMandatory: true
+    TaxBreakDown:
+      title: TaxBreakDown
+      required:
+      - taxes
+      - allIncluded
+      type: object
+      properties:
+        taxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Taxis'
+          description: ''
+        allIncluded:
+          type: boolean
+      example:
+        taxes:
+        - included: false
+          amount: 6.60
+          currency: EUR
+          type: TAX
+          clientAmount: 6.60
+          clientCurrency: EUR
+        - included: true
+          percent: 10.00
+          amount: 15.29
+          currency: EUR
+          type: TAX
+        allIncluded: false
+    Taxis:
+      title: Taxis
+      required:
+      - included
+      - amount
+      - currency
+      - type
+      type: object
+      properties:
+        included:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        type:
+          type: string
+        clientAmount:
+          type: string
+        clientCurrency:
+          type: string
+        percent:
+          type: string
+      example:
+        included: false
+        amount: 6.60
+        currency: EUR
+        type: TAX
+        clientAmount: 6.60
+        clientCurrency: EUR
+tags:
+- name: Misc
+  description: ''
