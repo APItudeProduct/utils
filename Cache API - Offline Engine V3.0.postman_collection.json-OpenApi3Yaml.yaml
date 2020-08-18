@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title:  Offline Engine V3.0
+  title:  Offline Engine API
   description: >-
-    #Offline Engine API
+    # Offline Engine API
 
     The Offline Engine provides a way to query the HBG availability directly 
     in the client's data centers, without any limitation of quotas or traffic. 
@@ -24,11 +24,16 @@ info:
 servers:
 - url: https://cd41e6aa-6d17-4546-b024-fddc0798db0b.mock.pstmn.io/hotels
   variables: {}
+tags:
+- name: HotelChangeNotifications
+  description: Sends a Notifcation when a changes are detected in the availability of a Hotel
+- name: Availability
+  description: Search for hotel rates withing a time frame
 paths:
   /changes/stream:
     get:
       tags:
-      - Changes
+      - HotelChangeNotifications
       summary: hotels/change/stream
       description: "This endpoint represents a Kafka topic for the specific work-set defined in the workset endpoint. The messages of the topic contain the changes at the hotel level, having the occupancy and the length of stay as secondary attributes. This change stream works together with the hotels/changes endpoint to get the specific changes.\n\nA work-set defines a Kafka topic, therefore every time a work-set is defined a new topic is created. This will help the clients to prioritize a \n\n\n\n**Reply Arguments**\n\n| Variable      |  Description |\n| ------------- |: -----:|\n| changedDate   | true - EPOCH       | Date to retrieve the changes |\n| hotel         | false - Array      | IDs |\n| packaging     | false - Boolean    | true/false |\n| adults        | false - Int        | # adults |\n| child Age     | false - Array[int] | childs ages |\n| lenghtOfStay  | false - int        | lenght of the stay |"
       operationId: hotels/change/stream
@@ -769,6 +774,4 @@ components:
         type: TAX
         clientAmount: 6.60
         clientCurrency: EUR
-tags:
-- name: Misc
-  description: ''
+
